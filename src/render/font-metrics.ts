@@ -15,7 +15,13 @@ export class FontMetrics {
         this._document = document;
     }
 
+    private static fontMetricsCache: Record<string, FontMetric> = {};
+
     private parseMetrics(fontFamily: string, fontSize: string): FontMetric {
+        const fontMetricKey = fontFamily + '-' + fontSize;
+        const inCache = FontMetrics.fontMetricsCache[fontMetricKey];
+        if (inCache) return inCache;
+
         const container = this._document.createElement('div');
         const img = this._document.createElement('img');
         const span = this._document.createElement('span');
@@ -58,6 +64,8 @@ export class FontMetrics {
         const middle = img.offsetTop - container.offsetTop + 2;
 
         body.removeChild(container);
+
+        FontMetrics.fontMetricsCache[fontMetricKey] = {baseline, middle};
 
         return {baseline, middle};
     }

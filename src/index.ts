@@ -110,7 +110,8 @@ const renderElement = async (element: HTMLElement, opts: Partial<Options>): Prom
                 context,
                 element,
                 containerWindow,
-                opts.replaceSelector
+                opts.replaceSelector,
+                cloneOptions
             );
 
             const cloneResult = await fastClone.clone();

@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import {DocumentCloner} from '../dom/document-cloner';
+import type {CloneOptions} from '../dom/document-cloner';
 import {Context} from './context';
 
 export class FastModeCloner {
@@ -8,7 +9,8 @@ export class FastModeCloner {
         private readonly context: Context,
         private element: HTMLElement,
         private containerWindow: Window,
-        private referenceSelector: string
+        private referenceSelector: string,
+        private options: CloneOptions
     ) {}
 
     // eslint-disable-next-line @typescript-eslint/explicit-member-accessibility
@@ -34,6 +36,17 @@ export class FastModeCloner {
                 containerReferenceElement.replaceWith(clonedReferenceNode);
 
                 await this.waitForLoad(clonedReferenceNode);
+
+                const onclone = this.options.onclone;
+                if (typeof onclone === 'function') {
+                    return Promise.resolve()
+                        .then(() => onclone(containerDoc, element))
+                        .then(() => {
+                            return {
+                                clonedElement: clonedReferenceNode as any
+                            };
+                        });
+                }
 
                 return {
                     clonedElement: clonedReferenceNode as any

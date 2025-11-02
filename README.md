@@ -1,51 +1,82 @@
-html2canfast
-===========
+# html2can(vas/fast)
 
-https://codesandbox.io/s/tender-river-ifjlm?file=/src/index.js
+#### What is html2can(vas/fast)?
 
+html2can(vas/fast) is a fork of [html2canfast](https://github.com/tobjoern/html2canfast) which itself is a forked version of [html2canvas](https://github.com/niklasvh/html2canvas). As it is a fork of html2canfast & html2canvas, it derives all the syntax and functionality from it, but offers further features, specialized for performance improvements.
 
-#### What is html2canfast? ####
+Whats different here :
 
-html2canfast is an experimental version of [html2canvas](https://github.com/niklasvh/html2canvas). As it is a fork of html2canvas, it derives all the syntax and functionality from it, but offers further features, specialized for performance improvements.
+This is a fork of [html2canfast](https://github.com/tobjoern/html2canfast) which merged in all recent commits from html2canvas.
+In addition a few fixes were made :
 
+1. Fix the onclone callback.
+2. Cache the response of font-metrics to prevent extra network traffic.
 
-### How does it work? ###
+### How does it work?
 
-html2canfast adds two new (optional) options: renderName and replaceSelector.
-If you plan to take multiple screenshots of the same element, you can enter the 'fast mode', by passing in both these options.
-The renderName is an arbitrary key, which is used to, so to say, cache the created container, so it can be accessed in subsequent screenshots, which means html2canfast is only faster on 1+ screenshots.
-The replaceSelector is the selector for the element you wish to screenshot.
-html2canvas works by creating an iframe of the complete document on each screenshot, which includes having to request all the images, script, links etc. embedded on your site.
-This is, for some purposes, extremely inefficient.
-html2canfast 'caches' this iframe, so that it doesn't have to be re-created on each screenshot.
+Checkout the respective origin repo's for their changes :
 
-### Example ###
-You have a game, and want to take 1+ screenshots or the game screen, with the selector '#game'.
-You decide to use the key: 'game-screen'.
+[html2canfast](https://github.com/tobjoern/html2canfast)
+[html2canvas](https://github.com/niklasvh/html2canvas)
 
-    const gameScreen = document.getElementById('#game');
-
-    html2canvas(gameScreen, {
-        renderName: 'game-screen',
-        replaceSelector: '#game',
-        removeContainer: false
-    }).then(function(canvas) {
-        document.body.appendChild(canvas);
-    });
-
-It is crucial to note, that the renderName 'game-screen', should from now on only be used to capture screenshots or the '#game' element, as html2canfast replaces this selector in the 'cached' container.
-Another note, of the utmost importance is that you **must** pass in the removeContainer option as false. Failing to do so will result in now performance improvements.
-
-### How much faster is it? ###
-How much faster html2canfast is, depends mostly on two variables: the overall size (meaning number of elements) of the webpage, and the content size of the external resources (images etc.) embedded on that webpage.
-With that being said, the performance can be ~10000% or 100 times, faster than html2canvas.
-Checkout the [comparison](https://codesandbox.io/s/tender-river-ifjlm?file=/src/index.js)!
-
-
-### Installation ###
-
-Available on npm [html2canfast](https://www.npmjs.com/package/html2canfast)
+### Installation & Build
 
 Install:
 
-    $ npm i html2canfast
+Clone the Repo & cd into it :
+
+    $ git clone https://github.com/QuintenMuyllaert/html2canvas
+    $ cd html2canvas
+
+Install dependencies :
+
+    $ npm i
+
+Build the project :
+
+    $ npm run build
+
+Copy over the correct built file from `dist/` (`html2canvas.js` `html2canvas.min.js` `html2canvas.esm.js` ) into local project.
+
+### Why is this fork relevant?
+
+[html2canvas](https://github.com/niklasvh/html2canvas) loads EVERY asset the site needs to take a screenshot, even if the element in question does not use them. [html2canfast](https://github.com/tobjoern/html2canfast) fixes this but is 100's of commits behind.
+
+-   canfast does not cache the images made in font-metrics.
+-   canfast has a bug where the `onclone` callback does not trigger on subsequent renders.
+
+The latter is really important for a case where you need to include the browser in a rAF loop as followed :
+
+#### Example :
+
+```ts
+import html2canvas from './html2canvas.esm.js';
+
+const htmlCanvas = htmlElement.querySelector('canvas')!;
+const htmlInput = htmlElement.querySelector('#input')!;
+// ^ assuming input has dynamic content.
+
+const ctx = htmlCanvas.getContext('2d');
+
+const main = async () => {
+    await html2canvas(htmlInput, {
+        renderName: 'game',
+        replaceSelector: '#input',
+        canvas: htmlCanvas,
+        backgroundColor: '#00000000',
+        removeContainer: false,
+        logging: false,
+        scale: 1,
+        onclone: (_documentClone: Document, _referenceElement: HTMLElement) => {
+            //any code that hooks right before render happens
+            ctx.reset();
+        }
+
+        //... other options
+    });
+
+    requestAnimationFrame(main);
+};
+
+requestAnimationFrame(main);
+```
